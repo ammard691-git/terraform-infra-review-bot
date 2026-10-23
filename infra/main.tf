@@ -1,53 +1,53 @@
-# Deliberately risky demo infrastructure. It is only ever planned, never applied.
+# Fixed demo infrastructure: private bucket, restricted SSH, least-privilege IAM,
+# no NAT gateway, small encrypted instance. Still only planned, never applied.
 
 resource "aws_s3_bucket" "logs" {
-  bucket = "ammar-demo-public-logs-12345"
+  bucket = "ammar-demo-private-logs-12345"
 }
 
 resource "aws_s3_bucket_public_access_block" "logs" {
   bucket = aws_s3_bucket.logs.id
 
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
-resource "aws_security_group" "ssh_open" {
-  name        = "ssh-open"
-  description = "Allows SSH from anywhere"
+resource "aws_security_group" "ssh_restricted" {
+  name        = "ssh-restricted"
+  description = "Allows SSH from one trusted IP only"
 
   ingress {
-    description = "SSH"
+    description = "SSH from my IP only"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["203.0.113.10/32"]
   }
 }
 
-resource "aws_iam_policy" "god_mode" {
-  name = "god-mode"
+resource "aws_iam_policy" "read_logs" {
+  name = "read-logs-only"
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
       Effect   = "Allow"
-      Action   = "*"
-      Resource = "*"
+      Action   = ["s3:GetObject"]
+      Resource = "${aws_s3_bucket.logs.arn}/*"
     }]
   })
 }
 
-resource "aws_eip" "nat" {
-  domain = "vpc"
-}
-
-resource "aws_nat_gateway" "nat" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = "subnet-00000000000000000"
-}
-
-resource "aws_instance" "big" {
+resource "aws_instance" "small" {
   ami           = "ami-00000000000000000"
-  instance_type = "p4d.24xlarge"
+  instance_type = "t3.micro"
+
+  metadata_options {
+    http_tokens = "required"
+  }
+
+  root_block_device {
+    encrypted = true
+  }
 }
