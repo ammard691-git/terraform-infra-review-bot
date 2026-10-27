@@ -22,4 +22,17 @@ calls Claude -> one sticky PR comment with a findings table and suggested fixes.
 - Claude's review is advisory; Checkov and Terraform provide the deterministic findings.
 
 ## Evidence
-_Screenshots of the PR comment, workflow run and token usage go here._
+Live example: [PR #1](https://github.com/ammard691-git/terraform-infra-review-bot/pull/1). Click "edited" on the bot's comment to see the first version.
+
+| | Risky PR (before) | Fixed PR (after) |
+|---|---|---|
+| Verdict | Not safe to merge | Safe to merge (plan-only demo) |
+| High-severity issues | 4 | 0 |
+| Checkov failed checks | 27 | 10 |
+| Offline plan | 7 to add | 5 to add |
+| Claude tokens in / out | 5,769 / 3,215 | 4,217 / 3,994 |
+| Claude cost | $0.0022 | $0.0024 |
+
+Planted risks caught: public S3 bucket, SSH open to 0.0.0.0/0, wildcard IAM policy, p4d.24xlarge GPU instance (about $24k a month, Claude's estimate), NAT gateway.
+
+Total project spend: $0.01 in Claude usage. AWS: $0. GitHub Actions: $0.
